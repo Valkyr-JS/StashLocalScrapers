@@ -1,56 +1,54 @@
 import json
 import os
-import py_common.log as log  # type: ignore
-from py_common.util import scraper_args  # type: ignore
+import py_common.log as log
+from py_common.util import scraper_args
 import sys
+from py_common.types import PerformerSearchResult, ScrapedPerformer
 
+# Constants
 dirAddFriends = "/data/addfriends/"
 dirModelArchive = dirAddFriends + "model-archive/"
 
 
-def postprocess(obj, _):
-    return obj
+def searchPerformer(name: str) -> list[PerformerSearchResult]:
+    """
+    Find JSON files in the model-archive folder that include the performer's
+    name, and return data to display in the results list.
+    """
 
-
-def findModelArchiveJsons(name: str) -> list[str]:
-    result = []
-
+    # Search for files
+    files = []
     for dirpath, _, filenames in os.walk(dirModelArchive):
         for filename in [f for f in filenames if name in f]:
             filepath = os.path.join(dirpath, filename)
-            result.append(filepath)
+            files.append(filepath)
 
-    return result
-
-
-def searchPerformer(name: str):
-    # perform scraping here - using name for the query
-    res = findModelArchiveJsons(name)
-
-    # fill in the output
-    data = []
-
-    # example shown for a single found performer
-    for jsonFile in res:
+    # Create the results page data
+    res = []
+    for jsonFile in files:
         with open(jsonFile) as f:
             jsonData = json.load(f)
             jsonData = jsonData["site"]
             filePath = jsonFile.split(dirModelArchive)[1]
 
-            p = {}
+            p: PerformerSearchResult = {}
             p["name"] = jsonData["site_name"]
             p["disambiguation"] = filePath
-            data.append(p)
+            res.append(p)
             f.close()
 
-    return data
+    return res
 
 
-def scrapePerformer(input):
+def scrapePerformer(args: PerformerSearchResult) -> ScrapedPerformer:
+    """
+    Return all available performer data from the found model-archive file as
+    Stash performer data.
+    """
+
     # Get the json file
-    jsonFile = dirModelArchive + input["disambiguation"]
-
-    ret = {}
+    jsonFile = dirModelArchive + args["disambiguation"]
+    ret: ScrapedPerformer = {}
 
     with open(jsonFile) as f:
         jsonData = json.load(f)
@@ -101,7 +99,6 @@ def main_scraper():
     result = None
     match op, args:
         case "performer-by-fragment", args:
-            # Get the affiliated file
             result = scrapePerformer(args)
         case "performer-by-name", {"name": name} if name:
             result = searchPerformer(name)
