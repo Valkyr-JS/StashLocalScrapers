@@ -1,0 +1,14 @@
+name: AddFriends
+# requires: py_common
+performerByFragment:
+  action: script
+  script:
+    - python
+    - performer.py
+    - performer-by-fragment
+performerByName:
+  action: script
+  script:
+    - python
+    - performer.py
+    - performer-by-name
